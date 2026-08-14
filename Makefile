@@ -1,20 +1,19 @@
 .PHONY: up down migrate seed test
 
 up:
-	docker-compose up -d
+	sudo docker-compose up -d
 
 down:
-	docker-compose down
+	sudo docker-compose down
 
 migrate:
-	docker-compose exec web python -m alembic upgrade head || \
-	docker-compose exec web psql -U searchcraft -d searchcraft -f /app/migrations/001_initial.sql
+	sudo docker-compose exec -T postgres psql -U searchcraft -d searchcraft < migrations/001_initial.sql
 
 seed:
-	docker-compose exec web python -c "from src.seed import seed; seed()"
+	sudo docker-compose exec web python -c "from src.seed import seed; seed()"
 
 test:
-	docker-compose exec web pytest tests/
+	sudo docker-compose exec web pytest tests/
 
 logs:
-	docker-compose logs -f
+	sudo docker-compose logs -f
