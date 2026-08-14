@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Query, Depends, HTTPException
 from typing import Optional, List
 from src.search import client, INDEX_NAME
-from src.schemas import SearchResponse, FacetDistribution
+from src.schemas import SearchResponse
 
 router = APIRouter()
 
-@router.get("/search")
+@router.get("")
 async def search(
     q: Optional[str] = Query(None, description="Search query"),
     category: Optional[str] = Query(None, description="Filter by category"),
@@ -24,7 +24,7 @@ async def search(
     if brand:
         filter_conditions.append(f"brand = '{brand}'")
     if min_price is not None and max_price is not None:
-        filter_conditions.append(f"price BETWEEN {min_price} AND {max_price}")
+        filter_conditions.append(f"price {min_price} TO {max_price}")
     elif min_price is not None:
         filter_conditions.append(f"price >= {min_price}")
     elif max_price is not None:

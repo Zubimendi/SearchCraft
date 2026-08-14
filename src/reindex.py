@@ -41,11 +41,12 @@ async def reindex(progress_callback=None):
             if progress_callback:
                 progress_callback(i+batch_size, total)
 
-    # 3. Swap alias: point "products" to the new index
-    # Meilisearch alias: if alias exists, it will be updated to point to the new index
-    # We need to ensure the alias is updated atomically (Meilisearch does this).
-    client.update_alias(INDEX_NAME, new_index_name)
+    # 3. Atomically swap the new index into the canonical "products" index.
+    # swap_indexes swaps the contents of both indexes in place, so "products"
+    # now holds the freshly-built data and the temp index holds the old data.
+    client.swap_indexes([{"indexes": [INDEX_NAME, new_index_name]}])
 
-    # 4. Optionally delete old index (but keep for rollback)
-    # We'll keep old for a while; we can delete old ones later.
+    # 4. Delete the stale temp index that now contains the old data.
+    client.delete_index(new_index_name)
+
     return new_index_name
