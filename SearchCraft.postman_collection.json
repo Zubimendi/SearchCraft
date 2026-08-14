@@ -1,0 +1,185 @@
+{
+  "info": {
+    "name": "SearchCraft API",
+    "description": "API collection for SearchCraft - a faceted product search API with a live index sync using a transactional outbox pattern.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        },
+        "description": "Check if the API is running."
+      }
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Pro Wireless Mouse\",\n  \"description\": \"Ergonomic lag-free wireless mouse for professionals.\",\n  \"price\": 49.99,\n  \"category\": \"Electronics\",\n  \"brand\": \"TechGear\",\n  \"attributes\": {\n    \"color\": \"black\",\n    \"weight\": \"120g\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", ""]
+            },
+            "description": "Create a new product. This will trigger a database event, inserting a record into the outbox. The background worker will then sync this to Meilisearch."
+          }
+        },
+        {
+          "name": "Get Product",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "{{product_id}}"]
+            },
+            "description": "Fetch a product by its UUID from the PostgreSQL database."
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"price\": 39.99,\n  \"description\": \"Updated description with a new lower price!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "{{product_id}}"]
+            },
+            "description": "Partially update a product. This queues an update event in the outbox to be synced to Meilisearch."
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/products/{{product_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "products", "{{product_id}}"]
+            },
+            "description": "Delete a product from the database. A delete event is queued in the outbox to remove it from the search index."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Search Products",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/search?q=mouse&category=Electronics&brand=TechGear&min_price=10&max_price=100&facets=category,brand&page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "search"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "mouse",
+                  "description": "Full-text search query"
+                },
+                {
+                  "key": "category",
+                  "value": "Electronics",
+                  "description": "Filter by exact category"
+                },
+                {
+                  "key": "brand",
+                  "value": "TechGear",
+                  "description": "Filter by exact brand"
+                },
+                {
+                  "key": "min_price",
+                  "value": "10",
+                  "description": "Minimum price"
+                },
+                {
+                  "key": "max_price",
+                  "value": "100",
+                  "description": "Maximum price"
+                },
+                {
+                  "key": "facets",
+                  "value": "category,brand",
+                  "description": "Comma-separated facets to compute distributions for"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Perform a faceted search directly against Meilisearch. Supports filtering, text search, and facet distributions."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reindex",
+      "item": [
+        {
+          "name": "Trigger Zero-Downtime Reindex",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/v1/reindex/",
+              "host": ["{{base_url}}"],
+              "path": ["api", "v1", "reindex", ""]
+            },
+            "description": "Starts a background job that streams all data from PostgreSQL into a newly created Meilisearch index, configures its settings, and then atomically swaps the index alias to point to the new index. Returns immediately."
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "product_id",
+      "value": "replace-with-uuid",
+      "type": "string"
+    }
+  ]
+}
